@@ -1,0 +1,295 @@
+---
+import Icon from './Icon.astro';
+import { type Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+import { profile, stats, allSkills } from '../data/content';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+// duplicate for a seamless marquee loop
+const marquee = [...allSkills, ...allSkills];
+---
+
+<section class="hero" id="top">
+  <div class="hero-bg" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <div class="container hero-inner">
+    <p class="hero-status" data-reveal>
+      <span class="dot"></span>{t('hero.available')}
+    </p>
+
+    <p class="hero-eyebrow" data-reveal style="--reveal-delay:60ms">
+      {profile.name} · <span class="handle">{profile.handle}</span>
+    </p>
+
+    <h1 class="hero-headline" data-reveal style="--reveal-delay:120ms">
+      {t('hero.headline').split(' ').map((w) => {
+        const hot = /performance|automa|experi/i.test(w);
+        return <span class={hot ? 'gradient-text' : undefined}>{w + ' '}</span>;
+      })}
+    </h1>
+
+    <p class="hero-intro" data-reveal style="--reveal-delay:200ms">{t('hero.intro')}</p>
+
+    <div class="hero-cta" data-reveal style="--reveal-delay:280ms">
+      <a class="btn btn-primary" href="#projects">
+        {t('hero.ctaPrimary')}<Icon name="arrow" />
+      </a>
+      <a class="btn btn-ghost" href="#contact">{t('hero.ctaSecondary')}</a>
+      <div class="hero-socials">
+        <a href={profile.social.github} target="_blank" rel="noopener" aria-label="GitHub">
+          <Icon name="github" />
+        </a>
+        <a href={profile.social.instagram} target="_blank" rel="noopener" aria-label="Instagram">
+          <Icon name="instagram" />
+        </a>
+        <a href={profile.social.whatsapp} target="_blank" rel="noopener" aria-label="WhatsApp">
+          <Icon name="whatsapp" />
+        </a>
+      </div>
+    </div>
+
+    <dl class="hero-stats" data-reveal style="--reveal-delay:360ms">
+      {stats.map((s) => (
+        <div class="stat">
+          <dt class="stat-val gradient-text">{s.value}</dt>
+          <dd class="stat-label">{t(s.key as any)}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      {marquee.map((s) => <span class="chip">{s}</span>)}
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    padding-top: calc(var(--nav-h) + clamp(2.5rem, 7vw, 5rem));
+    padding-bottom: 0;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+  }
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.5;
+    will-change: transform;
+  }
+  .orb-1 {
+    width: 540px;
+    height: 540px;
+    background: radial-gradient(circle, var(--violet), transparent 70%);
+    top: -160px;
+    left: -120px;
+    animation: float1 18s var(--ease) infinite alternate;
+  }
+  .orb-2 {
+    width: 460px;
+    height: 460px;
+    background: radial-gradient(circle, var(--cyan), transparent 70%);
+    top: -60px;
+    right: -100px;
+    opacity: 0.35;
+    animation: float2 22s var(--ease) infinite alternate;
+  }
+  @keyframes float1 {
+    to {
+      transform: translate(60px, 50px) scale(1.1);
+    }
+  }
+  @keyframes float2 {
+    to {
+      transform: translate(-50px, 70px) scale(1.08);
+    }
+  }
+  .grid-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
+    opacity: 0.5;
+  }
+
+  .hero-inner {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: clamp(3rem, 7vw, 5rem);
+  }
+  .hero-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: var(--r-full);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 0.82rem;
+    color: var(--text-soft);
+    font-family: var(--font-mono);
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    70% {
+      box-shadow: 0 0 0 8px rgba(52, 211, 153, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+    }
+  }
+  .hero-eyebrow {
+    margin-top: 1.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--text-soft);
+  }
+  .hero-eyebrow .handle {
+    color: var(--cyan);
+  }
+  .hero-headline {
+    margin-top: 1rem;
+    font-size: clamp(1.7rem, 4vw, 3rem);
+    font-weight: 800;
+    line-height: 1.18;
+    max-width: 26ch;
+  }
+  .hero-intro {
+    margin-top: 1.6rem;
+    max-width: 60ch;
+    color: var(--text-soft);
+    font-size: clamp(1rem, 2.2vw, 1.18rem);
+  }
+  .hero-cta {
+    margin-top: 2.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .hero-socials {
+    display: flex;
+    gap: 0.4rem;
+    margin-left: 0.3rem;
+  }
+  .hero-socials a {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--r-full);
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+    transition: color var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
+  }
+  .hero-socials a:hover {
+    color: var(--text);
+    border-color: var(--violet);
+    transform: translateY(-2px);
+  }
+  .hero-socials svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .hero-stats {
+    margin: 3.2rem 0 0;
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    gap: clamp(1.5rem, 5vw, 3.5rem);
+    padding: 1.6rem 2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: color-mix(in srgb, var(--surface) 60%, transparent);
+    backdrop-filter: blur(8px);
+  }
+  .stat-val {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 800;
+    font-family: var(--font-mono);
+  }
+  .stat-label {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text-mute);
+    max-width: 14ch;
+    margin-inline: auto;
+  }
+
+  .marquee {
+    margin-top: clamp(2rem, 5vw, 3.5rem);
+    border-block: 1px solid var(--border);
+    padding-block: 1rem;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    overflow: hidden;
+  }
+  .marquee-track {
+    display: flex;
+    gap: 1rem;
+    width: max-content;
+    animation: scroll 42s linear infinite;
+  }
+  .marquee:hover .marquee-track {
+    animation-play-state: paused;
+  }
+  @keyframes scroll {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  .chip {
+    flex: none;
+    padding: 0.5rem 1.1rem;
+    border-radius: var(--r-full);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 620px) {
+    .hero-stats {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.6rem 1rem;
+      width: 100%;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .orb,
+    .marquee-track,
+    .dot {
+      animation: none;
+    }
+  }
+</style>

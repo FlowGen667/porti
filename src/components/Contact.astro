@@ -1,0 +1,278 @@
+---
+import Icon from './Icon.astro';
+import { type Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+import { profile } from '../data/content';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<section class="section" id="contact">
+  <div class="container contact">
+    <div class="contact-aside" data-reveal>
+      <p class="eyebrow">{t('contact.eyebrow')}</p>
+      <h2 class="section-title gradient-text">{t('contact.title')}</h2>
+      <p class="section-subtitle">{t('contact.subtitle')}</p>
+
+      <div class="channels">
+        <a class="channel" href={`mailto:${profile.email}`}>
+          <span class="channel-icon"><Icon name="mail" /></span>
+          <span class="channel-text">
+            <small>{t('contact.orEmail')}</small>
+            <strong>{profile.email}</strong>
+          </span>
+        </a>
+        <a class="channel channel-wa" href={profile.social.whatsapp} target="_blank" rel="noopener">
+          <span class="channel-icon wa"><Icon name="whatsapp" /></span>
+          <span class="channel-text">
+            <small>WhatsApp</small>
+            <strong>{profile.whatsappDisplay}</strong>
+          </span>
+        </a>
+        <div class="channel-socials">
+          <a href={profile.social.instagram} target="_blank" rel="noopener" aria-label="Instagram">
+            <Icon name="instagram" /><span>{profile.social.instagramHandle}</span>
+          </a>
+          <a href={profile.social.github} target="_blank" rel="noopener" aria-label="GitHub">
+            <Icon name="github" /><span>{profile.social.githubHandle}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <form class="form" data-form action="/api/contact" method="POST" data-reveal>
+      <div class="field">
+        <label for="name">{t('contact.name')}</label>
+        <input id="name" name="name" type="text" required autocomplete="name"
+          placeholder={t('contact.namePlaceholder')} />
+      </div>
+      <div class="field">
+        <label for="email">{t('contact.email')}</label>
+        <input id="email" name="email" type="email" required autocomplete="email"
+          placeholder={t('contact.emailPlaceholder')} />
+      </div>
+      <div class="field">
+        <label for="message">{t('contact.message')}</label>
+        <textarea id="message" name="message" rows="4" required
+          placeholder={t('contact.messagePlaceholder')}></textarea>
+      </div>
+      <!-- honeypot -->
+      <input type="text" name="company" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true" />
+      <input type="hidden" name="lang" value={lang} />
+
+      <button type="submit" class="btn btn-primary submit" data-submit>
+        <span class="label-idle">{t('contact.send')}<Icon name="arrow" /></span>
+        <span class="label-busy">{t('contact.sending')}</span>
+      </button>
+
+      <p class="form-msg" data-msg role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+
+<script
+  is:inline
+  define:vars={{ ok: t('contact.success'), err: t('contact.error') }}
+>
+  (function () {
+    const form = document.querySelector('[data-form]');
+    if (!form) return;
+    const btn = form.querySelector('[data-submit]');
+    const msg = form.querySelector('[data-msg]');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (form.company && form.company.value) return; // honeypot tripped
+      btn.classList.add('busy');
+      btn.disabled = true;
+      msg.textContent = '';
+      msg.className = 'form-msg';
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(Object.fromEntries(new FormData(form))),
+        });
+        if (!res.ok) throw new Error('bad status');
+        form.reset();
+        msg.textContent = ok;
+        msg.classList.add('success');
+      } catch (_) {
+        msg.textContent = err;
+        msg.classList.add('error');
+      } finally {
+        btn.classList.remove('busy');
+        btn.disabled = false;
+      }
+    });
+  })();
+</script>
+
+<style>
+  .contact {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(2rem, 6vw, 4.5rem);
+    align-items: start;
+  }
+  .channels {
+    margin-top: 2.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  .channel {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.1rem 1.3rem;
+    border-radius: var(--r-md);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    transition: border-color var(--t-fast), transform var(--t-fast);
+  }
+  .channel:hover {
+    border-color: var(--violet);
+    transform: translateY(-2px);
+  }
+  .channel-icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border-radius: var(--r-sm);
+    background: color-mix(in srgb, var(--violet) 16%, transparent);
+    color: var(--violet);
+  }
+  :root[data-theme='dark'] .channel-icon {
+    color: #b3a4ff;
+  }
+  .channel-icon.wa {
+    background: color-mix(in srgb, #25d366 16%, transparent);
+    color: #1faa52;
+  }
+  :root[data-theme='dark'] .channel-icon.wa {
+    color: #34e07b;
+  }
+  .channel-wa:hover {
+    border-color: #25d366;
+  }
+  .channel-text {
+    display: flex;
+    flex-direction: column;
+  }
+  .channel-text small {
+    color: var(--text-mute);
+    font-size: 0.78rem;
+  }
+  .channel-text strong {
+    font-size: 1rem;
+  }
+  .channel-socials {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+  .channel-socials a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1rem;
+    border-radius: var(--r-full);
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+    font-size: 0.88rem;
+    font-family: var(--font-mono);
+    transition: color var(--t-fast), border-color var(--t-fast);
+  }
+  .channel-socials a:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+  .channel-socials svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    padding: clamp(1.6rem, 4vw, 2.2rem);
+    border-radius: var(--r-lg);
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .field label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-soft);
+  }
+  input,
+  textarea {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--bg-soft);
+    color: var(--text);
+    font-size: 0.95rem;
+    transition: border-color var(--t-fast), box-shadow var(--t-fast);
+    resize: vertical;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--text-mute);
+  }
+  input:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--violet);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--violet) 25%, transparent);
+  }
+  .hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+  .submit {
+    margin-top: 0.3rem;
+    position: relative;
+  }
+  .label-busy {
+    display: none;
+  }
+  .submit.busy .label-idle {
+    display: none;
+  }
+  .submit.busy .label-busy {
+    display: inline;
+  }
+  .form-msg {
+    font-size: 0.9rem;
+    min-height: 1.2em;
+    margin: 0;
+  }
+  .form-msg.success {
+    color: #34d399;
+  }
+  .form-msg.error {
+    color: #fb7185;
+  }
+  @media (max-width: 760px) {
+    .contact {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

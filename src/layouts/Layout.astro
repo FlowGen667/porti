@@ -1,0 +1,157 @@
+---
+import '../styles/global.css';
+import { htmlLang, type Lang } from '../i18n/ui';
+import { useTranslations, localizePath } from '../i18n/utils';
+import { profile } from '../data/content';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const site = Astro.site?.toString().replace(/\/$/, '') ?? '';
+const canonical = new URL(localizePath('/', lang), Astro.site ?? Astro.url).toString();
+const ogImage = `${site}/og-image.png`;
+
+const alternates: { lang: Lang; href: string }[] = (['pt', 'en', 'es'] as Lang[]).map(
+  (l) => ({ lang: l, href: new URL(localizePath('/', l), Astro.site ?? Astro.url).toString() })
+);
+
+// Schema.org structured data
+const personSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: profile.name,
+  alternateName: profile.handle,
+  url: site || canonical,
+  email: `mailto:${profile.email}`,
+  jobTitle: t('hero.eyebrow'),
+  description: t('meta.description'),
+  telephone: profile.whatsappDisplay.replace(/[^\d+]/g, ''),
+  sameAs: [profile.social.instagram, profile.social.github],
+  knowsAbout: [
+    'Web Development',
+    'Performance Optimization',
+    'SEO',
+    'Automation',
+    'AI Integrations',
+    'Astro',
+    'React',
+    'Next.js',
+    'Cloudflare',
+  ],
+};
+
+const siteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: t('meta.title'),
+  url: site || canonical,
+  inLanguage: htmlLang[lang],
+  description: t('meta.description'),
+};
+---
+
+<!doctype html>
+<html lang={htmlLang[lang]} data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{t('meta.title')}</title>
+    <meta name="description" content={t('meta.description')} />
+    <meta name="author" content={profile.name} />
+    <meta name="theme-color" content="#0a0a0f" />
+    <link rel="canonical" href={canonical} />
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <!-- Hreflang -->
+    {alternates.map((a) => <link rel="alternate" hreflang={htmlLang[a.lang]} href={a.href} />)}
+    <link rel="alternate" hreflang="x-default" href={alternates[0].href} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={profile.name} />
+    <meta property="og:title" content={t('meta.title')} />
+    <meta property="og:description" content={t('meta.description')} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={htmlLang[lang].replace('-', '_')} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:alt" content={t('meta.ogAlt')} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={t('meta.title')} />
+    <meta name="twitter:description" content={t('meta.description')} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!-- Fonts: non-blocking load -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      />
+    </noscript>
+
+    <!-- No-flash theme: runs before paint -->
+    <script is:inline>
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme');
+          var theme =
+            stored ||
+            (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {}
+      })();
+    </script>
+
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(personSchema)} />
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(siteSchema)} />
+  </head>
+  <body>
+    <slot />
+
+    <!-- Scroll-reveal observer -->
+    <script is:inline>
+      (function () {
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var els = document.querySelectorAll('[data-reveal]');
+        if (reduce || !('IntersectionObserver' in window)) {
+          els.forEach(function (el) {
+            el.classList.add('is-visible');
+          });
+          return;
+        }
+        var io = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                io.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+        );
+        els.forEach(function (el) {
+          io.observe(el);
+        });
+      })();
+    </script>
+  </body>
+</html>

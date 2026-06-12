@@ -1,0 +1,13 @@
+# Cloudflare Pages configuration.
+# The site is a static Astro build; the /functions directory is deployed
+# automatically as Pages Functions (see functions/api/contact.ts).
+
+name = "gabriel-mondaini-portfolio"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-11-01"
+
+# Optional contact-form integration — set these as encrypted secrets in the
+# Cloudflare Pages dashboard (Settings → Environment variables), not here:
+#   CONTACT_WEBHOOK   a Discord/Slack/Make webhook to receive submissions
+#   RESEND_API_KEY    to send the message as an email via Resend
+#   CONTACT_TO        destination email (defaults to mondaini.contato@gmail.com)

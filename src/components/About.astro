@@ -1,0 +1,88 @@
+---
+import Icon from './Icon.astro';
+import { type Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const points = [
+  { key: 'about.point1', icon: 'spark' as const },
+  { key: 'about.point2', icon: 'gauge' as const },
+  { key: 'about.point3', icon: 'cloud' as const },
+  { key: 'about.point4', icon: 'bot' as const },
+];
+---
+
+<section class="section" id="about">
+  <div class="container about">
+    <div class="about-left" data-reveal>
+      <p class="eyebrow">{t('about.eyebrow')}</p>
+      <h2 class="section-title">{t('about.title')}</h2>
+      <p class="section-subtitle">{t('about.description')}</p>
+    </div>
+
+    <ul class="points">
+      {points.map((p, i) => (
+        <li data-reveal style={`--reveal-delay:${i * 70}ms`}>
+          <span class="point-icon"><Icon name={p.icon} /></span>
+          <span>{t(p.key as any)}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .about {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: center;
+  }
+  .points {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .points li {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.1rem 1.3rem;
+    border-radius: var(--r-md);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 1rem;
+    transition: transform var(--t-fast) var(--ease), border-color var(--t-fast);
+  }
+  .points li:hover {
+    transform: translateX(6px);
+    border-color: var(--border-strong);
+  }
+  .point-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    flex: none;
+    border-radius: var(--r-sm);
+    background: var(--grad);
+    color: #0a0a0f;
+  }
+  .point-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  @media (max-width: 760px) {
+    .about {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
