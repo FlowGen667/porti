@@ -1,14 +1,17 @@
 /**
- * Cloudflare Pages Function — contact form handler.
- * Deployed automatically by Cloudflare Pages from the /functions directory.
+ * Cloudflare Worker entry — serves the static Astro build (via the ASSETS
+ * binding) and handles the contact form at POST /api/contact.
  *
- * Optional environment variables (set in the Pages dashboard):
- *   CONTACT_WEBHOOK  — a webhook URL (e.g. Discord/Slack/Make) to forward submissions
- *   RESEND_API_KEY   — if set, sends an email via Resend to CONTACT_TO
+ * Deployed with `wrangler deploy` using Workers Static Assets (see wrangler.toml).
+ *
+ * Optional secrets (set in the Cloudflare dashboard → Settings → Variables):
+ *   CONTACT_WEBHOOK  — webhook URL (Discord/Slack/Make) to forward submissions
+ *   RESEND_API_KEY   — if set, sends the message as email via Resend
  *   CONTACT_TO       — destination email (defaults to mondaini.contato@gmail.com)
  */
 
 interface Env {
+  ASSETS: { fetch: (request: Request) => Promise<Response> };
   CONTACT_WEBHOOK?: string;
   RESEND_API_KEY?: string;
   CONTACT_TO?: string;
@@ -30,7 +33,20 @@ const json = (data: unknown, status = 200) =>
 
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+async function handleContact(request: Request, env: Env): Promise<Response> {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: {
+        Allow: 'POST, OPTIONS',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+    });
+  }
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405, headers: { Allow: 'POST' } });
+  }
+
   let body: Payload;
   try {
     body = await request.json();
@@ -38,7 +54,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return json({ ok: false, error: 'invalid_json' }, 400);
   }
 
-  // Honeypot — silently accept to not tip off bots.
+  // Honeypot — silently accept so bots don't learn they were caught.
   if (body.company) return json({ ok: true });
 
   const name = (body.name ?? '').trim();
@@ -56,7 +72,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const text = `New contact from the portfolio (${body.lang ?? 'pt'})\n\nName: ${name}\nEmail: ${email}\n\n${message}`;
 
   try {
-    // Forward to a webhook if configured.
     if (env.CONTACT_WEBHOOK) {
       await fetch(env.CONTACT_WEBHOOK, {
         method: 'POST',
@@ -65,7 +80,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       });
     }
 
-    // Or send an email via Resend if a key is present.
     if (env.RESEND_API_KEY) {
       await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -83,24 +97,23 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       });
     }
   } catch (err) {
-    // Don't fail the user if a downstream provider hiccups; log for observability.
+    // Don't fail the visitor if a downstream provider hiccups.
     console.error('contact forward failed', err);
   }
 
   return json({ ok: true });
-};
+}
 
-// Reject non-POST methods.
-export const onRequest: PagesFunction<Env> = async ({ request, next }) => {
-  if (request.method === 'POST') return next();
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        Allow: 'POST, OPTIONS',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    });
-  }
-  return new Response('Method Not Allowed', { status: 405, headers: { Allow: 'POST' } });
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+
+    if (url.pathname === '/api/contact') {
+      return handleContact(request, env);
+    }
+
+    // Everything else: serve the static Astro build.
+    // Unknown paths fall back to 404.html via `not_found_handling` in wrangler.toml.
+    return env.ASSETS.fetch(request);
+  },
 };
